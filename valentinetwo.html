@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Arrow of the Heart</title>
+  
+  <!-- Romantic font -->
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+  <!-- jQuery for animations and class toggling -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    /* RESET & BASE */
+    * {
+      box-sizing: border-box;
+      padding: 0;
+    }
+    body {
+      background-color: #F1A9A0;
+      margin: 0;
+      padding: 0;
+      font-family: 'Dancing Script', cursive;
+      position: relative;
+      overflow-x: hidden;
+    }
+    
+    /* GAME CONTAINER */
+    #gameContainer {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+    }
+    
+    /* MODAL STYLES */
+    .modal {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ffccdd;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      z-index: 11;
+      font-size: 1.8em;
+      color: #800040;
+    }
+    /* Shooting modal appears fixed near the top (using fixed bottom offset) */
+    .modal.shoot {
+      position: fixed;
+      bottom: 500px;
+      left: 50%;
+      transform: translateX(-50%);
+      top: auto;
+    }
+    .modal.valentine {
+      top: 60%;
+    }
+    .modal button {
+      margin: 10px;
+      padding: 10px 20px;
+      background: #fff;
+      border: 2px solid #ff99bb;
+      border-radius: 5px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    
+    /* STICK-FIGURE CONTAINER (original stickman) */
+    #man-container {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      height: 200px;
+      z-index: 1;
+    }
+    
+    /* PIXEL HEART */
+    .pixel-block {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, -110%);
+            width: 6em;
+            height: 5em;
+            z-index: 2;
+        }
+        .pixelized--heart {
+            display: block;
+            width: 10%;
+            height: 10%;
+            box-shadow:
+                1em 0em #F22613,
+                2em 0em #F22613,
+                4em 0em #F22613,
+                5em 0em #F22613,
+
+                0em 1em #F22613,
+                1em 1em #F22613,
+                2em 1em #F22613,
+                3em 1em #F22613,
+                4em 1em #F22613,
+                5em 1em #F22613,
+                6em 1em #F22613,
+
+                0em 2em #F22613,
+                1em 2em #F22613,
+                2em 2em #F22613,
+                3em 2em #F22613,
+                4em 2em #F22613,
+                5em 2em #F22613,
+                6em 2em #F22613,
+
+                1em 3em #F22613,
+                2em 3em #F22613,
+                3em 3em #F22613,
+                4em 3em #F22613,
+                5em 3em #F22613,
+
+                2em 4em #F22613,
+                3em 4em #F22613,
+                4em 4em #F22613,
+
+                3em 5em #F22613;
+        }
+    
+    
+    .blast {
+      animation: blastAnimation 1s forwards;
+    }
+    @keyframes blastAnimation {
+      0% { transform: translateX(-50%) scale(1); opacity: 1; }
+      100% { transform: translateX(-50%) scale(20); opacity: 0; }
+    }
+    
+    /* STICKMAN SVG (original) */
+    #man {
+      width: 100%;
+      height: 100%;
+    }
+    #man.dead circle,
+    #man.dead line {
+      stroke: red;
+    }
+    #man.dead .eyes { display: block; }
+    #man .eyes { display: none; }
+    
+    /* ARROW STYLE */
+    #arrow {
+      position: absolute;
+      width: 50px;
+      height: 5px;
+      background: black;
+      z-index: 5;
+    }
+    #arrow:after {
+      content: "";
+      position: absolute;
+      right: -10px;
+      top: -5px;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+      border-left: 10px solid black;
+    }
+    
+    /* FALLING ROSES */
+    .rose {
+      position: fixed;
+      top: -50px;
+      font-size: 24px;
+      animation: fallRose 4s linear forwards;
+      z-index: 4;
+    }
+    @keyframes fallRose {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(110vh); opacity: 0; }
+    }
+    
+    /* CAMERA FLASH */
+    #flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .flash-active {
+      animation: flashAnimation 0.5s forwards;
+    }
+    @keyframes flashAnimation {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
+    /* PARTY EFFECTS */
+    .party {
+      position: fixed;
+      font-size: 50px;
+      animation: partyAnim 1s ease-out forwards;
+      z-index: 12;
+    }
+    @keyframes partyAnim {
+      0% { opacity: 1; transform: translate(0,0) scale(1); }
+      100% { opacity: 0; transform: translate(0, -100px) scale(1.5); }
+    }
+    
+    /* CRYING CAT - falling from above */
+    .cryingCat {
+      position: fixed;
+      top: -50px;
+      font-size: 150px;
+      animation: fallRose 4s linear forwards;
+      z-index: 12;
+    }
+    
+    /* DANCING STICKMAN CONTAINERS */
+    #dancing-man-container,
+    #dancing-girl-container {
+      position: fixed;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 200px;
+      display: none;
+      z-index: 15;
+    }
+    /* Initial positions: man on left, girl on right */
+    #dancing-man-container { left: 40%; }
+    #dancing-girl-container { left: 60%; }
+    
+    /* Basic stickman parts for dancing figures */
+    .stickman {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .head {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 30px;
+      border: 3px solid black;
+      border-radius: 50%;
+    }
+    .body {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 60px;
+      background: black;
+    }
+    .arm {
+      position: absolute;
+      top: 40px;
+      width: 40px;
+      height: 4px;
+      background: black;
+    }
+    .left-arm {
+      left: 50%;
+      transform-origin: left;
+      transform: rotate(45deg);
+    }
+    .right-arm {
+      right: 50%;
+      transform-origin: right;
+      transform: rotate(-45deg);
+    }
+    .leg {
+      position: absolute;
+      top: 90px;
+      width: 4px;
+      height: 50px;
+      background: black;
+    }
+    .left-leg {
+      left: 50%;
+      transform-origin: top;
+      transform: rotate(30deg);
+    }
+    .right-leg {
+      right: 50%;
+      transform-origin: top;
+      transform: rotate(-30deg);
+    }
+    /* Dancing animations */
+    @keyframes dance-arms {
+      0% { transform: rotate(45deg); }
+      50% { transform: rotate(0deg); }
+      100% { transform: rotate(45deg); }
+    }
+    @keyframes dance-arms-right {
+      0% { transform: rotate(-45deg); }
+      50% { transform: rotate(0deg); }
+      100% { transform: rotate(-45deg); }
+    }
+    @keyframes dance-legs {
+      0% { transform: rotate(30deg); }
+      50% { transform: rotate(15deg); }
+      100% { transform: rotate(30deg); }
+    }
+    @keyframes dance-legs-right {
+      0% { transform: rotate(-30deg); }
+      50% { transform: rotate(-15deg); }
+      100% { transform: rotate(-30deg); }
+    }
+    .left-arm.dance {
+      animation: dance-arms 0.5s infinite;
+    }
+    .right-arm.dance {
+      animation: dance-arms-right 0.5s infinite;
+    }
+    .left-leg.dance {
+      animation: dance-legs 0.5s infinite;
+    }
+    .right-leg.dance {
+      animation: dance-legs-right 0.5s infinite;
+    }
+    
+    /* CAMERA CAPTURE EFFECT */
+    .capture-frame {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 320px;
+      height: 380px;
+      transform: translate(-50%, -50%) scale(0);
+      border: 10px solid #210115;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      z-index: 30;
+      background: transparent;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 10px;
+    }
+    .capture-frame.flash {
+      animation: captureFlash 0.7s forwards;
+    }
+    @keyframes captureFlash {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+    .capture-frame .caption {
+      font-size: 2em;
+      color: #800040;
+      margin-top: 10px;
+    }
+    
+    /* CAMERA ICON */
+    .camera-icon {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 80px;
+      opacity: 0;
+      z-index: 31;
+    }
+    @keyframes cameraDrop {
+      0% { top: -100px; opacity: 0; }
+      50% { top: 10%; opacity: 1; }
+      100% { top: 10%; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <!-- Shooting Modal -->
+    <div id="shootModal" class="modal shoot">
+      <p>Do you wanna shoot him?</p>
+      <button id="shootYes">Yes</button>
+      <button id="shootNo">No</button>
+    </div>
+    
+    <!-- Stickman Container (original stickman) -->
+    <div id="man-container">
+      <!-- Pixel Heart -->
+      <div class="pixel-block" id="heart">
+        <div class="pixelized--heart"></div>
+      </div>
+      <!-- Stickman SVG -->
+      <svg id="man" viewBox="0 0 100 200">
+        <circle cx="50" cy="20" r="15" stroke="black" stroke-width="2" fill="none" />
+        <line x1="50" y1="35" x2="50" y2="100" stroke="black" stroke-width="2" />
+        <line x1="50" y1="50" x2="30" y2="70" stroke="black" stroke-width="2" />
+        <line x1="50" y1="50" x2="70" y2="70" stroke="black" stroke-width="2" />
+        <line x1="50" y1="100" x2="30" y2="130" stroke="black" stroke-width="2" />
+        <line x1="50" y1="100" x2="70" y2="130" stroke="black" stroke-width="2" />
+        <g class="eyes">
+          <line x1="43" y1="16" x2="47" y2="20" stroke="black" stroke-width="2" />
+          <line x1="47" y1="16" x2="43" y2="20" stroke="black" stroke-width="2" />
+          <line x1="53" y1="16" x2="57" y2="20" stroke="black" stroke-width="2" />
+          <line x1="57" y1="16" x2="53" y2="20" stroke="black" stroke-width="2" />
+        </g>
+      </svg>
+    </div>
+    
+    <!-- Valentine Modal -->
+    <div id="valentineModal" class="modal valentine" style="display: none;">
+      <p>Happy Valentine's Day!<br>Salutations!! Do you wanna be my valentine per chance?</p>
+      <button id="valentineYes">Yes</button>
+      <button id="valentineNo">No</button>
+    </div>
+  </div>
+  
+  <!-- Dancing Stickman Containers -->
+  <div id="dancing-man-container">
+    <div class="stickman">
+      <div class="head"></div>
+      <div class="body"></div>
+      <div class="arm left-arm"></div>
+      <div class="arm right-arm"></div>
+      <div class="leg left-leg"></div>
+      <div class="leg right-leg"></div>
+    </div>
+  </div>
+  <div id="dancing-girl-container">
+    <div class="stickman">
+      <div class="head"></div>
+      <div class="body"></div>
+      <div class="arm left-arm"></div>
+      <div class="arm right-arm"></div>
+      <div class="leg left-leg"></div>
+      <div class="leg right-leg"></div>
+    </div>
+  </div>
+  
+  <!-- Flash overlay for camera flash effect -->
+  <div id="flash"></div>
+  
+  <!-- Camera Icon (for the capture effect) -->
+  <div class="camera-icon" id="cameraIcon">📷</div>
+  
+  <!-- Audio elements -->
+  <audio id="bgAudio" src="letsgetiton.mp3" autoplay loop></audio>
+  <audio id="valentineAudio" src="loversrock.mp3"></audio>
+  <audio id="finalAudio" src="song3.mp3"></audio>
+  
+  <!-- Video element for crying cat effect (with audio enabled) -->
+  <video id="cryingVideo" width="320" height="240" autoplay style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; display: none;">
+    <source src="cryingcat.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  
+  <script>
+    // Grab elements
+    const shootModal = document.getElementById('shootModal');
+    const shootYesBtn = document.getElementById('shootYes');
+    const shootNoBtn = document.getElementById('shootNo');
+    const valentineModal = document.getElementById('valentineModal');
+    const valentineYesBtn = document.getElementById('valentineYes');
+    const valentineNoBtn = document.getElementById('valentineNo');
+    const manSVG = document.getElementById('man');
+    let roseInterval;
+    
+    // Modal button event listeners
+    shootYesBtn.addEventListener('click', () => {
+      // Stop background music on first popup selection
+      const bgAudio = document.getElementById('bgAudio');
+      bgAudio.pause();
+      bgAudio.currentTime = 0;
+      shootArrow('yes');
+    });
+    shootNoBtn.addEventListener('click', () => {
+      // Stop background music on first popup selection
+      const bgAudio = document.getElementById('bgAudio');
+      bgAudio.pause();
+      bgAudio.currentTime = 0;
+      shootArrow('no');
+    });
+    valentineYesBtn.addEventListener('click', () => {
+      // When Valentine is accepted, ensure background music is stopped.
+      const bgAudio = document.getElementById('bgAudio');
+      bgAudio.pause();
+      bgAudio.currentTime = 0;
+      // Play the Valentine song
+      document.getElementById('valentineAudio').play();
+      
+      // Hide game elements
+      document.getElementById('gameContainer').style.display = 'none';
+      document.getElementById('man-container').style.display = 'none';
+      clearInterval(roseInterval);
+      removeAllRoses();
+      
+      // Show dancing stickman container (man)
+      $("#dancing-man-container").fadeIn(500);
+      $("#dancing-man-container .arm").addClass("dance");
+      $("#dancing-man-container .leg").addClass("dance");
+      
+      // After 3 seconds, show dancing girl and animate kiss
+      setTimeout(() => {
+        $("#dancing-girl-container").fadeIn(500, function() {
+          $("#dancing-girl-container .arm").addClass("dance");
+          $("#dancing-girl-container .leg").addClass("dance");
+          // Animate both containers to come closer
+          $("#dancing-man-container").animate({ left: "48%" }, 1000);
+          $("#dancing-girl-container").animate({ left: "52%" }, 1000, function() {
+            showKissHeart();
+            // After 2 seconds of the kiss, trigger the camera capture animation
+            setTimeout(captureMoment, 2000);
+          });
+        });
+      }, 3000);
+      
+      // Party effects during dancing for 10 seconds
+      let endTime = Date.now() + 15000;
+      const partyInterval = setInterval(() => {
+        triggerFlash();
+        showPartyEffects();
+        if (Date.now() > endTime) {
+          clearInterval(partyInterval);
+          $("#dancing-man-container").fadeOut(500);
+          $("#dancing-girl-container").fadeOut(500, function() {
+            $("#dancing-man-container .arm, #dancing-man-container .leg, #dancing-girl-container .arm, #dancing-girl-container .leg").removeClass("dance");
+            alert("Valentine's Day Celebration Over! TEXT ME BACK NOW <3");
+            // Reset game elements
+            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('man-container').style.display = 'block';
+          });
+        }
+      }, 500);
+      
+      valentineModal.style.display = 'none';
+      setTimeout(() => {
+        alert("Happy Valentine's Day Anshika <3 <3 ");
+      }, 1000);
+    });
+    
+    valentineNoBtn.addEventListener('click', () => {
+      valentineModal.style.display = 'none';
+      removeAllRoses();
+      showCryingCat();
+    });
+    
+    function removeAllRoses() {
+      document.querySelectorAll('.rose').forEach(r => r.remove());
+    }
+    
+    // Flash effect
+    function triggerFlash() {
+      const flashDiv = document.getElementById('flash');
+      flashDiv.classList.add('flash-active');
+      setTimeout(() => {
+        flashDiv.classList.remove('flash-active');
+      }, 500);
+    }
+    
+    // Party effects
+    function showPartyEffects() {
+      for (let i = 0; i < 10; i++) {
+        const party = document.createElement('div');
+        party.className = 'party';
+        party.textContent = '🎉';
+        party.style.left = Math.random() * window.innerWidth + 'px';
+        party.style.top = Math.random() * window.innerHeight + 'px';
+        document.body.appendChild(party);
+        setTimeout(() => {
+          party.remove();
+        }, 1000);
+      }
+    }
+    
+    // Crying cat effect: falling from above, plus play video with audio
+    function showCryingCat() {
+      document.getElementById('man-container').style.display = 'none';
+      for (let i = 0; i < 50; i++) {
+        const cat = document.createElement('div');
+        cat.className = 'cryingCat';
+        cat.textContent = '😿';
+        cat.style.left = Math.random() * window.innerWidth + 'px';
+        cat.style.fontSize = `${Math.random() * 80 + 20}px`;
+        cat.style.animation = `fallRose ${Math.random() * 3 + 2}s linear forwards`;
+        document.body.appendChild(cat);
+        setTimeout(() => {
+          cat.remove();
+        }, 4000);
+      }
+      // Show the crying video (with audio) as well
+      $("#cryingVideo").fadeIn(500);
+      setTimeout(() => {
+        $("#cryingVideo").fadeOut(300);
+      }, 2000);
+      
+      setTimeout(() => {
+        valentineModal.style.display = 'block';
+      }, 2000);
+    }
+    
+    // Arrow shooting
+    function shootArrow(choice) {
+      shootModal.style.display = 'none';
+      const arrow = document.createElement('div');
+      arrow.id = 'arrow';
+      let targetX, targetY;
+      if (choice === 'no') {
+        const heartEl = document.getElementById('heart');
+        const heartRect = heartEl.getBoundingClientRect();
+        targetX = heartRect.left + heartRect.width / 2;
+        targetY = heartRect.top + heartRect.height / 2;
+      } else {
+        const manRect = document.getElementById('man-container').getBoundingClientRect();
+        targetX = manRect.left + manRect.width / 2;
+        targetY = manRect.top + manRect.height / 2;
+      }
+      arrow.style.left = '-60px';
+      arrow.style.top = targetY + 'px';
+      document.body.appendChild(arrow);
+      arrow.offsetWidth;
+      arrow.style.transition = 'left 1s linear, top 1s linear';
+      arrow.style.left = targetX + 'px';
+      setTimeout(() => {
+        onArrowHit(choice, arrow);
+      }, 1000);
+    }
+    
+    function onArrowHit(choice, arrow) {
+      arrow.remove();
+      if (choice === 'yes') {
+        manSVG.classList.add('dead');
+        setTimeout(() => {
+          manSVG.classList.remove('dead');
+          shootModal.style.display = 'block';
+        }, 1500);
+      } else if (choice === 'no') {
+        blastHeart();
+      }
+    }
+    
+    function blastHeart() {
+      $("#heart").addClass("blast");
+      setTimeout(function () {
+        $("#heart").removeClass("blast");
+        startRoseFall();
+        triggerFlash();
+        valentineModal.style.display = 'block';
+      }, 1100);
+    }
+    
+    function startRoseFall() {
+      roseInterval = setInterval(() => {
+        const rose = document.createElement('div');
+        rose.className = 'rose';
+        rose.style.left = Math.random() * window.innerWidth + 'px';
+        rose.textContent = '🌹';
+        document.body.appendChild(rose);
+        setTimeout(() => {
+          rose.remove();
+        }, 4000);
+      }, 200);
+    }
+    
+    // Function to show a kiss heart overlay
+    function showKissHeart() {
+      const kissHeart = $("<div>❤️</div>").css({
+        position: "fixed",
+        top: "45%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        fontSize: "0px",
+        zIndex: 20
+      });
+      $("body").append(kissHeart);
+      kissHeart.animate({ fontSize: "100px", opacity: 1 }, 500, function() {
+        kissHeart.delay(500).animate({ opacity: 0, fontSize: "0px" }, 500, function() {
+          kissHeart.remove();
+        });
+      });
+    }
+    
+    // New function: Capture the moment with a camera capture animation and "xoxo" caption.
+    function captureMoment() {
+      // Create a capture frame that simulates a photo being taken
+      const captureFrame = $("<div class='capture-frame'></div>");
+      const caption = $("<div class='caption'>xoxo</div>");
+      captureFrame.append(caption);
+      $("body").append(captureFrame);
+      
+      // Animate the camera icon dropping in
+      const cameraIcon = $("#cameraIcon");
+      cameraIcon.css({ opacity: 0, top: "-100px" });
+      cameraIcon.show().animate({ top: "10%" , opacity: 1}, 500, function() {
+        // Trigger flash and then hide the camera icon after a short delay
+        triggerFlash();
+        setTimeout(() => {
+          cameraIcon.fadeOut(500);
+        }, 500);
+      });
+      
+      // Trigger the capture frame "pop-out" animation by adding the 'flash' class
+      captureFrame.addClass("flash");
+      
+      // After 3 seconds, fade out the capture frame and remove it
+      setTimeout(() => {
+        captureFrame.fadeOut(500, function() {
+          $(this).remove();
+        });
+      }, 3000);
+    }
+  </script>
+  
+  <!-- Audio elements (update src values with your own files) -->
+  <audio id="bgAudio" src="letsgetiton.mp3" autoplay loop></audio>
+  <audio id="valentineAudio" src="loversrock.mp3"></audio>
+  <audio id="finalAudio" src="song3.mp3"></audio>
+  
+  <!-- Video element for crying cat effect (with audio enabled) -->
+  <video id="cryingVideo" width="320" height="240" autoplay style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; display: none;">
+    <source src="cryingcat.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</body>
+</html>
